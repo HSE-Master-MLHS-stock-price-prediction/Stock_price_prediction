@@ -1,6 +1,9 @@
 import yfinance as yf
+from tqdm import tqdm
 
 class SimplePortfolioExperiment:
+    
+    
     
     def __init__(self, 
                  historical_data = None,
@@ -19,20 +22,22 @@ class SimplePortfolioExperiment:
         self.days_to_add_money = days_to_add_money
         self.money_to_add = money_to_add
         
-        self.historical_data = None
+        self.historical_data = historical_data
         if historical_data is None:
             self.historical_data = list(yf.Ticker('YNDX').history(period="max")['Close'][1412:-250])
         else:
             self.historical_data = historical_data
         
-        self.number_of_stocks = int(start_capital*stock_start_partial//historical_data[0])
-        self.free_money = start_capital - number_of_stocks*historical_data[0]
+        self.number_of_stocks = int(self.start_capital*stock_start_partial//self.historical_data[0])
+        self.free_money = self.start_capital - self.number_of_stocks*self.historical_data[0]
         
-        self.history_capital = [self.free_money + self.number_of_stocks*historical_data[0]]
+        self.history_capital = [self.free_money + self.number_of_stocks*self.historical_data[0]]
         self.history_free_money = [self.free_money]
         self.histiry_stocks = [self.number_of_stocks]
         
         self.window_size = window_size
+        
+        self.versioin = '0.0.1'
         
     def buy_papers(self, number_of_papers, ind, partial_operation = False):
         need_money = self.historical_data[ind] * number_of_papers
@@ -40,11 +45,11 @@ class SimplePortfolioExperiment:
             if partial_operation:
                 papers = int(self.free_money//self.historical_data[ind])
                 self.free_money -= papers*self.historical_data[ind]
-                self.number_of_papers += papers
+                self.number_of_stocks += papers
                 return True
             else:
                 return False
-        self.number_of_papers += papers
+        self.number_of_stocks += papers
         self.free_money -= need_money
         return True
     
@@ -59,7 +64,7 @@ class SimplePortfolioExperiment:
                 return False
         papers = int(money//self.historical_data[ind])
         self.free_money -= papers*self.historical_data[ind]
-        self.number_of_papers += papers
+        self.number_of_stocks += papers
         return True
     
     def buy_partial(self, partial, ind, partial_operation = False):
@@ -77,12 +82,12 @@ class SimplePortfolioExperiment:
         if self.number_of_stocks < number_of_papers:
             if partial_operation:
                 money_to_add = self.historical_data[ind]*self.number_of_stocks
-                self.number_of_papers = 0
+                self.number_of_stocks = 0
                 self.free_money += money_to_add
             else:
                 return False
         money_to_add = self.historical_data[ind]*number_of_papers
-        self.number_of_papers -= number_of_papers
+        self.number_of_stocks -= number_of_papers
         self.free_money += money_to_add
         return True
     
@@ -102,12 +107,15 @@ class SimplePortfolioExperiment:
         return self.sell_papers(papers, ind, partial_operation)
     
     def start_experiment(self):
-        for i in range(1, len(self.historical_data)):
+        print('Start portfolio experiment.')
+        for i in tqdm(range(1, len(self.historical_data))):
             if i%self.days_to_add_money == 0:
                 self.free_money += self.money_to_add
-            if i%self.days_per_action == 0:
-                self.make_action()
-            self.history_capital = [self.free_money + self.number_of_stocks*historical_data[i]]
+            if i%self.days_per_action == 0 and self.window_size <= i:
+                self.make_action(i)
+            self.history_capital.append(self.free_money + self.number_of_stocks*self.historical_data[i])
+            self.history_free_money.append(self.free_money)
+            self.histiry_stocks.append(self.number_of_stocks)
                 
-    def make_action(self):
+    def make_action(self, ind):
         pass
