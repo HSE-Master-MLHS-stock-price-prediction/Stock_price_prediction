@@ -11,7 +11,8 @@ class SimplePortfolioExperiment:
                  days_per_action=30,
                  days_to_add_money=30,
                  money_to_add=500,
-                 window_size=30):
+                 window_size=30,
+                 verbose=True):
 
         assert stock_start_partial >= 0.0 and stock_start_partial <= 1.0
 
@@ -20,10 +21,10 @@ class SimplePortfolioExperiment:
         self.days_per_action = days_per_action
         self.days_to_add_money = days_to_add_money
         self.money_to_add = money_to_add
+        self.verbose = verbose
 
         # If no data is provided, we will use the Yandex ticker as a
         # default one.
-
         self.historical_data = historical_data
         if historical_data is None:
             self.historical_data = list(yf.Ticker('YNDX').history(period="max")['Close'][1412:-250])
@@ -32,10 +33,12 @@ class SimplePortfolioExperiment:
 
         self.number_of_stocks = int(self.start_capital * stock_start_partial // self.historical_data[0])
         self.free_money = self.start_capital - self.number_of_stocks * self.historical_data[0]
+        self.money_invested = self.start_capital
 
         self.history_capital = [self.free_money + self.number_of_stocks * self.historical_data[0]]
+        self.history_profit = [0]
         self.history_free_money = [self.free_money]
-        self.histiry_stocks = [self.number_of_stocks]
+        self.history_stocks = [self.number_of_stocks]
 
         self.window_size = window_size
 
@@ -162,15 +165,21 @@ class SimplePortfolioExperiment:
         return self.sell_papers(papers, ind, partial_operation)
 
     def start_experiment(self):
-        print('Start portfolio experiment.')
-        for i in tqdm(range(1, len(self.historical_data))):
+        if self.verbose:
+            print('Start portfolio experiment.')
+            range_ = tqdm(range(1, len(self.historical_data)))
+        else:
+            range_ = range(1, len(self.historical_data))
+        for i in range_:
             if i % self.days_to_add_money == 0:
                 self.free_money += self.money_to_add
+                self.money_invested += self.money_to_add
             if i % self.days_per_action == 0 and self.window_size <= i:
                 self.make_action(i)
             self.history_capital.append(self.free_money + self.number_of_stocks * self.historical_data[i])
+            self.history_profit.append(self.history_capital[-1] - self.money_invested)
             self.history_free_money.append(self.free_money)
-            self.histiry_stocks.append(self.number_of_stocks)
+            self.history_stocks.append(self.number_of_stocks)
 
     def make_action(self, ind):
         pass
