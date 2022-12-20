@@ -25,7 +25,7 @@ def _transform_to_DOIU(prices: np.ndarray | pd.DataFrame | pd.Series):
         raise ValueError(f"wrong type {type(prices)}")
     x = [1]
     for el in arr:
-        x.append(x[-1] * (1 + el))
+        x.append(float(x[-1] * (1 + el)))
     return np.array(x)
 
 
