@@ -54,6 +54,36 @@ def prepare_data(prices,
     return X, y
 
 
+class TimeSeriesSplitter:
+    '''
+    Custom version of a rolling windows splitter for time series.
+    '''
+    def __init__(self, n_sets):
+        self.n_sets = n_sets
+
+
+    def split(self, x):
+        '''
+        Splits the times series into train/test sets. Return indices, not values.
+
+        :param np.ndarray x: time series to split
+        '''
+        n_splits = self.n_sets + 1
+        indices = np.arange(len(x))
+        split_size = len(x) // n_splits
+        i = 0
+        for i in range(self.n_sets - 1):
+            yield (
+                indices[split_size * i:split_size * (i + 1)], # Train set
+                indices[split_size * (i + 1):split_size * (i + 2)] # Test set
+            )
+
+        yield (
+            indices[-split_size * 2:-split_size], # Train set
+            indices[-split_size:]
+        )
+
+
 if __name__ == '__main__':
     yndx = yf.Ticker("yndx")
     prices = yndx.history(start="2011-05-24", end="2016-12-31",
